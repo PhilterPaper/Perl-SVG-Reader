@@ -1,0 +1,109 @@
+package PDF::Builder::Resource::XObject::Image::SVG;
+
+# note that SVG is under image area, although it's actually an XObject Form!
+# This is a dummy stub for when there is no SVG::Parser installed (otherwise,
+#   use SVG_SP.pm)
+use base 'PDF::Builder::Resource::XObject::Form::Hybrid';
+
+use strict;
+use warnings;
+
+our $VERSION = '3.012'; # VERSION
+my $LAST_UPDATE = '3.013'; # manually update whenever code is changed
+
+use Compress::Zlib;
+
+use PDF::Builder::Basic::PDF::Utils;
+use PDF::Builder::Util;
+use Scalar::Util qw(weaken);
+
+=head1 NAME
+
+PDF::Builder::Resource::XObject::Image::SVG - SVG image support stub
+
+=head1 METHODS
+
+=over
+
+=item  $res = PDF::Builder::Resource::XObject::Image::SVG->new($pdf, $msg, %opts)
+
+=item  $res = PDF::Builder::Resource::XObject::Image::SVG->new($pdf, $msg)
+
+Returns an SVG-image object (B<S>calable B<V>ector B<G>raphics) that contains
+only an error message (<rect> and <text>). Note that
+unlike the other image formats supported by PDF::Builder, this is I<not> a
+bitmapped image. It is an XObject Form, not an Image.
+
+If the SVG::Parser package is I<not> installed, PDF::Builder will be unable to
+handle SVG images, and will immediately return from the image_svg() call with
+a dummy graphic (text error message). This is done by invoking SVG rather than
+SVG_SP, with an error message.
+
+=over
+
+=item -name => string
+
+Optionally specify the name to be used for the object, rather than defaulting
+to SVx___.
+
+=back
+
+=cut
+
+# creates and returns the object containing the SVG image
+sub new {
+    my ($class, $pdf, $string, $PDF, %opts) = @_;
+
+    $class = ref($class) if ref $class;
+
+    my ($filetype, $fh, $xml, $name);
+
+    if (defined $opts{'-name'}) {
+	$name = $opts{'-name'};
+    }
+    my $self = $class->SUPER::new($pdf, $name || 'SVx'.pdfkey());
+    $pdf->new_obj($self) unless $self->is_obj($pdf);
+
+    $self->{' apipdf'} = $pdf;
+    weaken $self->{' apipdf'};
+
+    # dummy entry when parser not installed. output error message as graphic
+    $self->dummy($PDF->corefont('Times-Roman'), $string);
+
+    return $self;
+}
+
+# ----------------------------------------------------------------
+# output a message string (graphic) for errors
+sub dummy {
+    my ($self, $font, $string) = @_;
+
+    $self->save();
+    $self->fillcolor('black');
+    $self->strokecolor('black');
+    $self->linedash();
+    $self->linewidth(2);
+
+    $self->font($font, 20);
+    my $length = $self->advancewidth($string);
+    # draw a rectangle a little larger than the string
+    $self->rect(0,0, $length+20,35);
+    $self->stroke();
+    # put text message in the rectangle
+    $self->textstart();
+    $self->font($font, 20);
+    $self->translate(10,12);
+    $self->text($string);
+    $self->textend();
+
+    $self->{' w'} = $length+24;
+    $self->{' h'} = 37;
+    $self->bbox(0,0, $self->{' w'},$self->{' h'});
+
+    $self->restore();
+
+    return;
+}
+
+
+1;

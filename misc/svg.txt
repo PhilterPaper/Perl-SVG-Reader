@@ -1,0 +1,20 @@
+Set up so bulk of SVG parse and write code is in PDF::Builder::SVG separate package.
+Rest of stuff is normal image with optional use of PDF::Builder::SVG, which will in
+turn prereq SVG::Parser et al., and BE FOR SALE. Someone not buying PBS will simply
+have the dummy stubs in PDF::Builder, while someone installing PBS will get SVG
+image support.
+
+
+Builder.pm contains some SVG-specific that needs updating (image_svg s/b in
+Page.pm)
+
+Docs.pm similar
+
+SVG.pm.SVG is older version of Strawberry's SVG.pm
+
+SVG_SP.pm.SVG ?? eventually SVG.pm will be just dummy return and _SP will be
+real one?
+
+use Image::SVG::Path to decode "d" tag
+use Image::SVG::Transform to decode the transform attribute
+Desktop\SVG\svg\ contains a bunch of .svg files

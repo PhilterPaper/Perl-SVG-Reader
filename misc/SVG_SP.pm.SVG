@@ -1,0 +1,541 @@
+package PDF::Builder::Resource::XObject::Image::SVG_SP;
+
+# note that SVG is under image area, although it's actually an XObject Form!
+use base 'PDF::Builder::Resource::XObject::Form::Hybrid';
+
+use strict;
+use warnings;
+
+our $VERSION = '3.012'; # VERSION
+my $LAST_UPDATE = '3.013'; # manually update whenever code is changed
+
+use Compress::Zlib;
+
+use PDF::Builder::Basic::PDF::Utils;
+use PDF::Builder::Util;
+use Scalar::Util qw(weaken);
+
+# we really aren't going to check if this is a valid SVG -- we'll just assume
+# it is
+
+=head1 NAME
+
+PDF::Builder::Resource::XObject::Image::SVG_SP - SVG image support
+
+=head1 METHODS
+
+=over
+
+=item  $res = PDF::Builder::Resource::XObject::Image::SVG_SP->new($pdf, $file, %opts)
+
+=item  $res = PDF::Builder::Resource::XObject::Image::SVG_SP->new($pdf, $file)
+
+Returns an SVG-image object (B<S>calable B<V>ector B<G>raphics). Note that
+unlike the other image formats supported by PDF::Builder, this is I<not> a
+bitmapped image, but a collection of PDF (vector) graphic primitives, text
+primitives, and (embedded) bitmapped images. It is an XObject Form, not an
+Image.
+
+If the SVG::Parser package is I<not> installed, PDF::Builder will be unable to
+handle SVG images, and will immediately return from the image_svg() call with
+a dummy graphic (text error message). This is done by sending an error string
+to SVG.pm's new().
+
+=over
+
+=item -name => string
+
+Optionally specify the name to be used for the object, rather than defaulting
+to SVx___.
+
+=back
+
+=cut
+
+# creates and returns the object containing the SVG image
+sub new {
+    my ($class, $pdf, $file, %opts) = @_;
+
+    $class = ref($class) if ref $class;
+
+    my ($filetype, $fh, $xml, $name);
+
+    if (defined $opts{'-name'}) {
+	$name = $opts{'-name'};
+    }
+    $self = $class->SUPER::new($pdf, $name || 'SVx'.pdfkey());
+    $pdf->new_obj($self) unless $self->is_obj($pdf);
+
+    $self->{' apipdf'} = $pdf;
+    weaken $self->{' apipdf'};
+
+    if      (ref($file)) {
+	# supplied file is actually a filehandle
+	$fh = $file;
+	$filetype = 'unknownFile';
+	{
+	    local $/=undef;
+	    $xml = <$fh>;  # read in one big gulp
+	}
+        $self->process_svg($xml, $filetype, %opts);
+        close $fh;
+
+    } elsif ($file eq '') {
+	# dummy entry when parser not installed. output error message
+	# as graphic
+	dummy("SVG::Parser not available.");
+	return $self;
+
+    } elsif ($file =~ m/\n/) {
+        # has newline(s) so must be SVG string
+        $filetype = 'string';
+        $self->process_svg($file, $filetype, %opts);
+
+    } else {
+        # if no \n in string and ends in .svg or .html, try opening
+        if ($file =~ m/\.html?/i) {
+	    $filetype = 'HTML';
+        } else {
+	    $filetype = 'SVG';  # fallback
+        }
+        open $fh, "<", $file or die "$!: $file";
+        {
+	    local $/=undef;
+	    $xml = <$fh>;  # read in one big gulp
+        }
+        close $fh;
+        $self->process_svg($xml, $filetype, %opts);
+    
+    }
+
+    return $self;
+}
+
+# ----------------------------------------------------------------
+# given an XML string, process it, loading up $self
+sub process_svg {
+    my ($self, $xml, $filetype, %opts) = @_;
+
+    # first task is to trim off anything outside of <svg>..</svg>. if multiple
+    # <svg>, select -number'th (default 1)
+    # TBD may have to leave <?xml...>\n and <!DOCTYPE...>\n tags in
+    # TBD <link> to .css file(s) and <style> to be processed outside of <svg>
+    my $number = 1;
+    if (defined $opts{'-number'}) {
+	$number = $opts{'-number'};
+	if ($number < 1 || $number != int($number)) {
+            print "invalid -number option ignored. using '1'\n";
+	    $number = 1;
+	}
+    }
+    my $ptr = -1;
+    while ($number-- > 0) {
+	$ptr = index($xml, '<svg', $ptr+1);
+	if ($ptr < 0) {
+	    # didn't find an <svg> tag, or ran out of them
+	    print "No <svg> found, or -number option is more than number of <svg> tags.\n";
+	    dummy("No <svg>, or -number too large.");
+	    return $self;
+	}
+    }
+    # $ptr should be at desired <svg> tag
+    $xml = substr($xml, $ptr);
+    # find matching </svg>
+    $ptr = index($xml, '</svg>');
+    if ($ptr < 0) {
+	# missing </svg>. add one to end
+	print "Missing </svg> tag added to end\n";
+	$xml .= "\n</svg>";
+    } else {
+	$xml = substr($xml, 0, $ptr+5);
+    }
+
+    # handle other options
+    my $dpi;  # for converting px to inches (and on to points)
+    if (defined $opts{'-dpi'}) {
+	$dpi = $opts{'-dpi'};
+    } else {
+	$dpi = 100;
+    }
+
+    # now we have just one <svg> tag left in $xml
+    # NOTE: may need to define XML::SAX::ParserDetails.ini file
+    my $parser = new SVG::Parser();
+    my $svg = $parser->parse($xml);
+    # now have huge $svg hash ref with contents
+    $self->process_tags($svg);
+
+    return;
+}
+
+# ----------------------------------------------------------------
+# traverse SVG hash and build up $self object
+sub process_tags {
+    my ($self, $svg) = @_;
+    # $svg is a hashref to list of tags in (and including) <svg>
+
+print "we're in process_tags with $svg\n";
+    my @base = @{ $svg->{'-childs'}[0]->{'-childs'} };
+    my %attr;  # top level attributes/properties, to be inherited
+    $attr{'stroke-color'} = "black";
+    $attr{'fill-color'} = "black";
+    $attr{'stroke-width'} = 1;  # TBD many more defaults
+
+    dumpLevel(0, @base, %attr);
+
+    return;
+}
+
+# ----------------------------------------------------------------
+sub dumpLevel {
+    my ($i, @base, %inheritedAttr) = @_;
+
+    foreach my $ele (@base) {
+	my $name = $ele->{'-name'};
+
+	my %attributes = getAttr($ele); # could be empty
+	# override inherited attributes
+	%attributes = mergeHash(\%inheritedAttr, \%attributes);
+	# override current attributes
+	# TBD: full CSS processing, do this more formally
+	if (defined $ele->{'style'}) {
+	    my %CSS = getStyle($ele->{'style'});
+	    %attributes = mergeHash(\%attributes, \%CSS);
+        }
+	# now should have %attributes for settings to use
+
+	# -cdata has extra \n's to be trimmed out. leave in $string
+	# the parser library seems to have trouble with < and >
+	my $string;
+	if (defined $attributes{'-cdata'}) {
+	    $string = substr($attributes{'-cdata'}; # remove leading \n
+	    $string =~ s/<\n/</g; $string =~ s/\n>/>/g;
+	    $string =~ s/\n</</g; $string =~ s/>\n/>/g;
+        } # if no -cdata, leave $string undef
+
+	# transform= attribute maps to PDF transforms
+	# TBD
+	
+	$i++;
+
+	# all supported tags (elements)
+	
+	if      ($name eq 'svg') {
+	    # initially just width, height, optional x, y. other stuff later
+
+	# CONTAINERS, composites, and grouping
+	} elsif ($name eq 'g') {
+	    # this won't work quite the same way as spec'd, as we don't have
+	    # a temporary transparent canvas to composite all grouped items 
+	    # onto and then treat as a single element. for now, we just pass
+	    # on all the attributes to the children and hope for the best...
+	} elsif ($name eq 'defs') {
+	    # all elements under <defs> should have id=. they are not directly
+	    # drawn, but will be referred to later (<use>, etc.)
+	} elsif ($name eq 'use') {
+	    next;  # ignore for now
+	} elsif ($name eq 'symbol') {
+	    next;  # ignore for now
+
+	# GRAPHICS
+	} elsif ($name eq 'rect') {
+	    # width, height (default auto), x, y (default 0),
+	    # rx, ry (default 0) fill and draw a rectangle
+	} elsif ($name eq 'circle') {
+	    # cx, cy, r (default 0)  fill and draw a circle
+	} elsif ($name eq 'ellipse') {
+	    # cx, cy (default 0), rx, ry (default auto)  fill and draw ellipse
+	} elsif ($name eq 'line') {
+	    # x1, y1, x2, y2 (default 0) stroke a line(s)
+	} elsif ($name eq 'polyline') {
+	    # x,y and 1 or more pairs of points to stroke a polyline
+	    # fill=none important
+	} elsif ($name eq 'polygon') {
+	    # x,y and two or more pairs of points. auto-closes to x,y
+	    # fill-rule important, especially if edges cross, or fill=none
+	} elsif ($name eq 'path') {
+	    # d string to interpret as multiple PDF primitives
+	} elsif ($name eq 'image') {
+	    # support PNG, JPEG, SVG. allow support of GIF, TIFF, et al.
+	    next;  # not initially
+
+	# TEXT
+	} elsif ($name eq 'text') {
+	    # x,y (default 0) can be list of positions
+	    # dx,dy relative x and y, rotate  output text
+	    # font-family by number????
+	} elsif ($name eq 'tspan') {  # s/b child of <text>
+	    # x,y, dx,dy, rotate like <text>
+	    next;  # not initially
+	} elsif ($name eq 'textPath') {
+	    # href define arbitrary basepath
+	    next;  # not initially
+
+	# CLIP, MASK, etc.
+	} elsif ($name eq 'clipPath') {
+	    # similar to PDF? can intersect multiple clipping paths
+	    next;  # not initially
+	} elsif ($name eq 'mask') {
+	    # not quite sure what this does. transparency/alpha channel?
+	    next;
+
+	# MISCELLANEOUS
+	} elsif ($name eq 'style') {
+	    next;  # implement <style> later with full CSS support
+	} elsif ($name eq 'marker') {
+	    next;  # ignore initially, shouldn't be a big deal
+	} elsif ($name eq 'metadata') {
+	    next;  # ignored
+	} elsif ($name eq 'pattern') {
+	    next;  # ignored
+	} elsif ($name eq 'switch') {
+	    next;  # ignored
+	} elsif ($name eq 'foreignObject') {
+	    next;  # ignored
+
+	# GRADIENT fill, implement later
+	} elsif ($name eq 'linearGradient') {
+	    next;
+	} elsif ($name eq 'radialGradient') {
+	    next;
+	} elsif ($name eq 'stop') {
+	    next;
+
+	# DEPRECATED tags, ignored
+	} elsif ($name eq 'tref') {
+	    next;
+	} elsif ($name eq 'font') {
+	    next;
+	} elsif ($name eq 'font-face') {
+	    next;
+	} elsif ($name eq 'font-face-format') {
+	    next;
+	} elsif ($name eq 'font-face-name') {
+	    next;
+	} elsif ($name eq 'font-face-src') {
+	    next;
+	} elsif ($name eq 'font-face-uri') {
+	    next;
+	} elsif ($name eq 'missing-glyph') {
+	    next;
+	} elsif ($name eq 'altGlyph') {
+	    next;
+	} elsif ($name eq 'altGlyphDef') {
+	    next;
+	} elsif ($name eq 'altGlyphItem') {
+	    next;
+	} elsif ($name eq 'glyph') {
+	    next;
+	} elsif ($name eq 'glyphRef') {
+	    next;
+	} elsif ($name eq 'hkern') {
+	    next;
+	} elsif ($name eq 'vkern') {
+	    next;
+	} elsif ($name eq 'color-profile') {
+	    next;
+
+	# EXPERIMENTAL tags, ignored for now
+	} elsif ($name eq 'hatch') {
+	    next;
+	} elsif ($name eq 'hatchpath') {
+	    next;
+	} elsif ($name eq 'solidcolor') {
+	    next;
+
+	# BLEEDING EDGE, ignored for now
+	} elsif ($name eq 'mesh') {
+	    next;
+	} elsif ($name eq 'meshgradient') {
+	    next;
+	} elsif ($name eq 'meshpatch') {
+	    next;
+	} elsif ($name eq 'meshrow') {
+	    next;
+	} elsif ($name eq 'unknown') {
+	    next;
+
+	# FILTERS, ingored for now
+	} elsif ($name eq 'filter') {
+	    # fe* children expected
+	    next;
+	} elsif ($name eq 'feGaussianBlur') {
+	    next;
+	} elsif ($name eq 'feOffset') {
+	    next;
+	} elsif ($name eq 'feBlend') {
+	    next;
+	} elsif ($name eq 'feColorMatrix') {
+	    next;
+	} elsif ($name eq 'feComponentTransfer') {
+	    next;
+	} elsif ($name eq 'feFuncR') {
+	    next;
+	} elsif ($name eq 'feFuncG') {
+	    next;
+	} elsif ($name eq 'feFuncB') {
+	    next;
+	} elsif ($name eq 'feFuncA') {
+	    next;
+	} elsif ($name eq 'feComposite') {
+	    next;
+	} elsif ($name eq 'feConvolveMatrix') {
+	    next;
+	} elsif ($name eq 'feDiffuseLighting') {
+	    next;
+	} elsif ($name eq 'feDistantLight') {
+	    next;
+	} elsif ($name eq 'fePointLight') {
+	    next;
+	} elsif ($name eq 'feSpecularLighting') {
+	    next;
+	} elsif ($name eq 'feSpotLight') {
+	    next;
+	} elsif ($name eq 'feDisplacementMap') {
+	    next;
+	} elsif ($name eq 'feDropShadow') {
+	    next;
+	} elsif ($name eq 'feFlood') {
+	    next;
+	} elsif ($name eq 'feImage') {
+	    next;
+	} elsif ($name eq 'feMerge') {
+	    next;
+	} elsif ($name eq 'feMergeNode') {
+	    next;
+	} elsif ($name eq 'feMorphology') {
+	    next;
+	} elsif ($name eq 'feTile') {
+	    next;
+	} elsif ($name eq 'feTurbulence') {
+	    next;
+	
+	# INTERACTIVITY, not to be implemented
+	} elsif ($name eq 'a') {
+	    next;
+	} elsif ($name eq 'cursor') {
+	    next;
+	} elsif ($name eq 'desc') {
+	    next;
+	} elsif ($name eq 'title') {
+	    next;
+	} elsif ($name eq 'view') {
+	    next;
+	} elsif ($name eq 'script') {
+	    next;
+
+	# ANIMATION, not to be implemented
+	} elsif ($name eq 'animate') {
+	    next;
+	} elsif ($name eq 'animateMotion') {
+	    next;
+	} elsif ($name eq 'animateTransform') {
+	    next;
+	} elsif ($name eq 'set') {
+	    next;
+	} elsif ($name eq 'discard') {
+	    next;
+	
+	} else {
+	    print "Unknown SVG tag (element) <$name> ignored.\n";
+	    next;
+	}
+
+	# does this tag have child(ren)?
+	my @children = @{ $ele->{'-childs'} } if defined $ele->{'-childs'};
+	if (scalar @children > 0) {
+	    # recursively process each child
+	    dumpLevel(0, @children, %attributes);
+	}
+    }
+
+} # end of dumpLevel()
+
+# ----------------------------------------------------------------
+# output a message string (graphic) for errors
+# the $font arg is something like $pdf->corefont('Times-Roman')
+sub dummy {
+    my ($self, $font, $string) = @_;
+
+    $self->save();
+    $self->fillcolor('black');
+    $self->strokecolor('black');
+    $self->linedash();
+    $self->linewidth(2);
+
+    $self->font($font, 20);
+    my $length = $self->advancewidth($string);
+    # draw a rectangle a little larger than the string
+    $self->rect(0,0, $length+20,35);
+    $self->stroke();
+    # put text message in the rectangle
+    $self->textstart();
+    $self->font($font, 20);
+    $self->translate(10,12);
+    $self->text($string);
+    $self->textend();
+
+    $self->{' w'} = $length+24;
+    $self->{' h'} = 37;
+    $self->bbox(0,0, $self->{' w'},$self->{' h'});
+
+    $self->restore();
+
+    return;
+}
+
+# ----------------------------------------------------------------
+# arg $ele is hashref. return hash of all elements, discarding keys
+# which start with -.
+sub getAttr {
+    my ($ele) = @_;
+  
+    my %result;  # initially empty
+
+    foreach my $key (keys %{ $ele }) {
+	if (substr($key, 0, 1) eq '-') { next; }
+	$result{$key} = $ele->{$key};
+    }
+    return %result;
+}
+
+# ----------------------------------------------------------------
+# arg $styleString is a list of properties (matching attribute names)
+# and values. return them as a hash
+sub getStyle {
+    my ($styleString) = @_;
+  
+    my %result;  # initially empty
+    my @pairs = split /;/, $styleString;
+    foreach my $str (@pairs) {
+	if ($str =~ m/^\s*$/) { next; } # last pair might be just whitespace
+	if ($str !~ m/:/) {
+	    print "style list entry malformed: '$str'\n";
+	    next;
+        }
+	my ($p, $v) = split /:/, $str;  # assume name: name format, no extra :
+	# trim off leading and trailing blanks
+	$p =~ s/^\s+//; $p =~ s/\s+$//;
+	$v =~ s/^\s+//; $v =~ s/\s+$//;
+	$result{$p} = $v;
+    }
+
+    return %result;
+}
+
+# ----------------------------------------------------------------
+# args are two hash (refs) to be combined and returned. if a key is
+# duplicated between the two, B's value wins over A's.
+sub mergeHash {
+    my ($rA, $rB) = @_;
+   
+    my %A = %{ $rA };
+    my %result = %{ $rB };
+    foreach my $key (keys %A) {
+	if (defined $result{$key}) { next; }
+	$result{$key} = $A{$key};
+    }
+    return %result;
+}
+
+1;
