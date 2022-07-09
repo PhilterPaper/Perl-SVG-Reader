@@ -4,6 +4,7 @@ use warnings;
 
 use SVG::Reader;
 use Carp;
+   use Data::Dumper;
 
 # dump formatted file or string of SVG content
 
@@ -15,7 +16,7 @@ my @ignore = (    # list of tags and elements to ignore
 #  'xmlns:xlink', 'xmlns:svg', 'xmlns', '-indent', '-printerror', '-document', 
 #  '-level', '-elist', '-idlist', '-standalone', '-raiseerror', '-docroot', 
 #  '-pubid', 'baseProfile', 'version', 'xml:space', 'xlink:href', 'type',
-   '-document', # is a reference, no easy way to print human-readable
+#  '-document', # is a reference, no easy way to print human-readable
    '-docref',   # appears to always be hash root $VAR1
    '-parent',   # is a reference, no easy way to print human-readable
    '-elist',    # is a reference, no easy way to print human-readable
@@ -72,8 +73,15 @@ font-family=\"Times New Roman\" font-size=\"16\" font-weight=\"400\" font-style=
     $xml = $ARGV[0];
 }
 
-my $svg = SVG::Reader->read_raw($xml, $mode);
+my $reader = SVG::Reader->new();
+my $svg = $reader->read_raw($xml, $mode);
+#print "input: xml='$xml', mode=$mode\n";
+ print "output from read_raw is $svg\n";
+ print Dumper($svg);
+ print "items under -document = ".(keys %{$svg->{-document}})."\n";
+ print "items under -childs   = ".(@{$svg->{-childs}})."\n";
 
+# top level of $svg is a hash. some elements are:
 # -encoding => "UTF-8" from encoding field in <?xml> tag
 # -childs => [] of {}'s
 #    height =>, width =>  from <svg> tag, in pixels (convert with dpi)
@@ -89,7 +97,17 @@ my $svg = SVG::Reader->read_raw($xml, $mode);
 #       for clipPath, has id =>
 #          -childs => [] of {}'s
 #             regular tag(s) within to define clipping path
+# -document => reference to -childs[0] (can ignore)
+#   various path roots are to -childs[0]
+#
+# alternative:
+# top level of $svg is a hash. some elements are:
+# -document => various global information
+#           => -childs => [] of {}'s, as above
+# -childs => [ pointer to -document ] (can ignore)
+#   various path roots are to -document
 
+   #if (scalar($svg
     # there is no -childs at the root level 0, so don't see -name=svg, just
     #   its attributes (width, height, viewBox)
     # top level gets -name=document and its attributes (-encoding)
@@ -131,12 +149,13 @@ sub ignoreIt {
 sub processChildren {
     my ($level, $ref) = @_;
 
-#   print "Recursively process -childs list at level $level\n";
-#   print " -childs has ".(@$ref)." elements\n";
+    print "Recursively process -childs list at level $level\n";
+    print " -childs has ".(@$ref)." elements\n";
 
     foreach my $child (@$ref) {
 	print ' 'x$level."level $level child: \n";
 	my @keylist = sortkeys(keys %$child);
+print " contains ".scalar(@keylist)." keys at this level\n";
 	foreach my $childEl (@keylist) {
 	    if (ignoreIt(\@ignore, $childEl)) { next; }
 	    if ($childEl eq '-name') {
@@ -215,6 +234,15 @@ sub processChildren {
 		print ' 'x($level+2)."element $childEl = '$child->{$childEl}'\n";
 		next;
 	    } 
+	    # -document: for now, just list number of keys in hash
+	    if ($childEl eq '-document') {
+	        if (ref($child->{$childEl}) eq 'SVG::Element') {
+		   print ' 'x($level+2)."element $childEl has ".(keys %{$child->{$childEl}})." elements\n";
+		} else {
+		   print "#### I don't know how to deal with a non-hash -document entry (type ".ref($child->{$childEl}).").\n";
+		}
+		next;
+	    }
 	    # sub-hash
 	    if ($childEl eq 'style') {
 		print ' 'x($level+2)."style:\n";
@@ -273,6 +301,7 @@ sub sortkeys {
 	     'stroke-opacity', 'stroke-linejoin', 'stroke-linecap', 
 	     'stroke-miterlimit', 
 	     # following might be of interest
+	     '-document',
              'xml:space', '-parentname', '-level', '-pubid', '-sysid',
 	     '-parentname', 'xml:space', '-xml_xlink', '-xml_svg',
 	     '-raiseerror', '-printerror', 'type', 'version', '-namespace',

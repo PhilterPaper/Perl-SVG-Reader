@@ -71,7 +71,7 @@ install by modifying certain installation files with "optional\_update.pl".
 
 ### Perl
 
-**Perl 5.22** or higher. It will likely run on somewhat earlier versions, but
+**Perl 5.24** or higher. It will likely run on somewhat earlier versions, but
 the CPAN installer may refuse to install it. The reason this version was
 chosen was so that LTS (Long Term Support) versions of Perl going back about
 6 years are officially supported (by SVG::Reader), and older versions are not
@@ -82,14 +82,14 @@ some range of earlier Perls.
 
 #### Older Perls
 
-If you MUST install on an older (pre 5.22) Perl, you can try the following for
+If you MUST install on an older (pre 5.24) Perl, you can try the following for
 Strawberry Perl (Windows). NO PROMISES! Something similar MAY work for other
 OS's and Perl installations:
 
 1. Unpack installation file (`.tar.gz`, via a utility such as 7-Zip) into a directory, and cd to that directory
-1. Edit META.json and change 5.022000 to 5.016000 or whatever level desired
-1. Edit META.yml and change 5.022000 to 5.016000 or whatever level desired
-1. Edit Makefile.PL and change `use 5.022000;` to `use 5.016000;`, change `$PERL_version` from `5.022000` to `5.016000`
+1. Edit META.json and change 5.024000 to 5.016000 or whatever level desired
+1. Edit META.yml and change 5.024000 to 5.016000 or whatever level desired
+1. Edit Makefile.PL and change `use 5.024000;` to `use 5.016000;`, change `$PERL_version` from `5.024000` to `5.016000`
 1. `cpan .`
 
 Note that some Perl installers MAY have a means to override or suppress the
@@ -108,14 +108,16 @@ These libraries are available from CPAN.
 
 #### REQUIRED
 
-These libraries should be automatically installed...
+These libraries should be automatically installed...  (once on CPAN)
 
 * SVG::Parser
 * Image::SVG::Path
 * Image::SVG::Transform
-* Carp
+* Carp (should be core)
 
 #### OPTIONAL
+
+* (currently none)
 
 These libraries are _recommended_ for improved functionality and performance.
 The default behavior is to attempt to install all of them during SVG::Reader
@@ -131,7 +133,7 @@ done during the install process, only copying of .pm Perl module files.
 
 ## Copyright
 
-This software is Copyright (c) 2021 by Phil M. Perry.
+This software is Copyright (c) 2021-2022 by Phil M. Perry.
 
 ## License
 
@@ -148,7 +150,7 @@ licenses and warranty statement.
 
 * INFO/RoadMap file for the SVG::Reader road map
 * CONTRIBUTING file for how to contribute to the project
-* INFO/SUPPORT file for information on reporting bugs, etc. via GitHub Issues (preferred), or the author's website
+* INFO/SUPPORT file for information on reporting bugs, etc. via GitHub Issues
 * INFO/DEPRECATED file for information on deprecated features
 * INFO/Changes\* files for older change logs
 

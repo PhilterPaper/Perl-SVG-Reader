@@ -1,0 +1,9 @@
+07-09-2022 0.002   UNRELEASED
+
+  full_decode.pl first release to fully decode and dump as array of hashes.
+
+06-20-2021 0.001
+
+  Initial release (to GitHub only, future release to cpan.org reserved).
+  dump.pl to read an SVG and dump its contents as a hash.
+  decode.pl to read an SVG and print its contents in a formatted manner.
