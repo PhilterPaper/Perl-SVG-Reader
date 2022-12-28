@@ -1,4 +1,4 @@
-Contributing to the development of SVG::Reader
+# Contributing to the development of SVG::Reader
 
 We would appreciate the community around us chipping in with code, tests, 
 documentation, and even just bug reports and feature requests. It's better 
@@ -7,9 +7,8 @@ not good to spend a lot of time working on something that no one is interested
 in!
 
 You can contribute to the discussion by posting bug reports, feature requests, 
-observations, etc. to the GitHub issues area, https://github.com/
-PhilterPaper/Perl-SVG-Reader/issues?q=is%3Aissue+sort%3Aupdated-desc (please 
-tag new threads accordingly, using ["Labels"]).
+observations, etc. to the [GitHub issues area](https://github.com/PhilterPaper/Perl-SVG-Reader/issues?q=is%3Aissue+sort%3Aupdated-desc "issues")
+(please tag new threads accordingly, using ["Labels"], if possible).
 
 Please also read INFO/RoadMap to get an idea of where we would like for 
 SVG::Reader to be heading, and may give you an idea of where you could
@@ -38,11 +37,13 @@ burden to us), we reserve the right to limit the ways that code changes can be
 submitted. At this point, the volume is low enough that almost anything can be 
 handled.
 
-Do NOT under ANY circumstances open a PR (Pull Request) to report a bug. It is 
-a waste of both your and our time and effort. Open a regular ticket (issue), 
-and attach a Perl (.pl) program illustrating the problem, if possible. If you
-believe that you have a program patch, and offer to share it as a PR, we may
-give the go-ahead. Unsolicited PRs may be closed without further action.
+## Do NOT...
+
+Do NOT under ANY circumstances open a PR (Pull Request) to **report a _bug_.**
+It is a waste of both _your_ and _our_ time and effort. Open a regular ticket
+(issue), and attach a Perl (.pl) program illustrating the problem, if possible. 
+If you believe that you have a program patch, and offer to share it as a PR, we 
+may give the go-ahead. Unsolicited PRs may be closed without further action.
 
 Please do not start on a massive project (especially, new function), without 
 discussing it with us first (via email or one of the discussion areas). This 
@@ -59,4 +60,4 @@ PDF::Builder::Ladder), under either our ownership or yours.
 
 Good luck, and best wishes using and helping with SVG::Reader!
 
-June, 2021
+December, 2022

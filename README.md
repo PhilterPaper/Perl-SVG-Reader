@@ -1,6 +1,10 @@
 # SVG::Reader
 
-`A Perl library to facilitate the reading of SVG files for the purpose of using their data in other programs`
+A Perl library to facilitate the reading of SVG files for the purpose of using their data in other programs
+
+[![Open Issues](https://img.shields.io/github/issues/PhilterPaper/Perl-SVG-Reader)](https://github.com/PhilterPaper/Perl-SVG-Reader/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/PhilterPaper/Perl-SVG-Reader/graphs/commit-activity)
 
 This archive contains the distribution SVG::Reader.
 See **Changes** file for the version.
