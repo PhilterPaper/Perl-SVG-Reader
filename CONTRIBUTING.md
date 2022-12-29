@@ -23,13 +23,6 @@ want to use it for other purposes, please let us know that you are doing so
 (and would like for it to be a separate, independent package) _before_ we come
 to release 1.000 time!**
 
-First of all, please read the section "Sofware Development Kit" under 
-SVG::Reader::Docs. This will be of interest if you want to do anything beyond 
-simply installing SVG::Reader as a prerequisite for some other package. You 
-can also get to this via "SOME SPECIAL NOTES" section of the root documentation 
-(SVG::Reader). You should create all the HTML documentation by running 
-"docs/buildDoc.pl --all" and read it before starting any serious work.
-
 For code changes, a GitHub pull request, a formal patch file (e.g., "diff"), or 
 even a replacement file or manual patch will do, so long as it's clear where it 
 goes and what it does. If the volume of such work becomes excessive (i.e., a 
@@ -56,7 +49,7 @@ work won't be wasted. If you have something dependent on SVG::Reader
 functionality, but it doesn't fit our roadmap for core functionality, we may 
 suggest that you release it as a separate package on CPAN (dependent on 
 SVG::Reader), or as a new sub-package under SVG::Reader (e.g., like 
-PDF::Builder::Ladder), under either our ownership or yours.
+PDF::Builder::Ladder under PDF::Builder), under either our ownership or yours.
 
 Good luck, and best wishes using and helping with SVG::Reader!
 
