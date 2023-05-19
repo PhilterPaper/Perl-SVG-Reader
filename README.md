@@ -2,6 +2,15 @@
 
 A Perl library to facilitate the reading of SVG files for the purpose of using their data in other programs
 
+## Help Needed!
+
+As you may have noticed, I haven't had time to work on this package. I _will_ be
+needing it to support PDF::Builder use of general SVG graphics, MathJax equation
+support, GnuPlot SVG graph output, and possibly other uses. I welcome anyone who
+wants to chip and and help develop this package. If you contribute a great deal
+to it, I would be happy to transfer ownership of it to you, if you'd like to own
+it!
+
 [![Open Issues](https://img.shields.io/github/issues/PhilterPaper/Perl-SVG-Reader)](https://github.com/PhilterPaper/Perl-SVG-Reader/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/PhilterPaper/Perl-SVG-Reader/graphs/commit-activity)

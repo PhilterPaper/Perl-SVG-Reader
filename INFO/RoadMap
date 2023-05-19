@@ -2,15 +2,21 @@ Planned (and speculative) future direction of SVG::Reader
 
 The intent is to take SVG content, as either a file or as a string, and parse
 it into standard primitives so that another program can use them. Currently,
-the targetted user is PDF::Builder, so that SVG content, including MathJax
-equations and Bar Codes can be supported, as well as the use of SVG as general
-image files.
+the targeted user is PDF::Builder, so that SVG content, including MathJax
+equations, Gnuplot output, and Bar Codes can be supported, as well as the use 
+of SVG as general image files.
 
 In the future, input support will likely be expanded to URLs (i.e., web
 sources) and arrays of strings.
 
 The intent is to allow the target system to generate vector graphics, rather
-than converting an SVG image into raster graphics. The output of SVG::Reader
-is likely to hew fairly closely to the SVG structure, rather than be something
-entirely new, although it is early enough in the process that nothing is cast
-in stone.
+than converting an SVG image into raster graphics. This way, the resulting
+graphics are intended to be scalable, rather than raster. The output of 
+SVG::Reader is likely to hew fairly closely to the SVG structure, rather than 
+be something entirely new, although it is early enough in the process that 
+nothing is cast in stone.
+
+For subroutine/function calls (such as <G>), it is possible that there will be
+an output setting to handle such calls as either calls of some sort, or 
+"unwound" into a stream of simple graphics primitives. Which to use would 
+depend on the capabilities of the rendering library.
