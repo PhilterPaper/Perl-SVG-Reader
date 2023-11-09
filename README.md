@@ -7,7 +7,7 @@ A Perl library to facilitate the reading of SVG files for the purpose of using t
 As you may have noticed, I haven't had time to work on this package. I _will_ be
 needing it to support PDF::Builder use of general SVG graphics, MathJax equation
 support, GnuPlot SVG graph output, and possibly other uses. I welcome anyone who
-wants to chip and and help develop this package. If you contribute a great deal
+wants to chip in and and help develop this package. If you contribute a great deal
 to it, I would be happy to transfer ownership of it to you, if you'd like to own
 it!
 
@@ -84,7 +84,7 @@ install by modifying certain installation files with "optional\_update.pl".
 
 ### Perl
 
-**Perl 5.24** or higher. It will likely run on somewhat earlier versions, but
+**Perl 5.26** or higher. It will likely run on somewhat earlier versions, but
 the CPAN installer may refuse to install it. The reason this version was
 chosen was so that LTS (Long Term Support) versions of Perl going back about
 6 years are officially supported (by SVG::Reader), and older versions are not
@@ -95,14 +95,14 @@ some range of earlier Perls.
 
 #### Older Perls
 
-If you MUST install on an older (pre 5.24) Perl, you can try the following for
+If you MUST install on an older (pre 5.26) Perl, you can try the following for
 Strawberry Perl (Windows). NO PROMISES! Something similar MAY work for other
 OS's and Perl installations:
 
 1. Unpack installation file (`.tar.gz`, via a utility such as 7-Zip) into a directory, and cd to that directory
-1. Edit META.json and change 5.024000 to 5.016000 or whatever level desired
-1. Edit META.yml and change 5.024000 to 5.016000 or whatever level desired
-1. Edit Makefile.PL and change `use 5.024000;` to `use 5.016000;`, change `$PERL_version` from `5.024000` to `5.016000`
+1. Edit META.json and change 5.026000 to 5.016000 or whatever level desired
+1. Edit META.yml and change 5.026000 to 5.016000 or whatever level desired
+1. Edit Makefile.PL and change `use 5.026000;` to `use 5.016000;`, change `$PERL_version` from `5.026000` to `5.016000`
 1. `cpan .`
 
 Note that some Perl installers MAY have a means to override or suppress the
