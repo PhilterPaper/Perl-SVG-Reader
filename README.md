@@ -2,6 +2,17 @@
 
 A Perl library to facilitate the reading of SVG files for the purpose of using their data in other programs
 
+## Going Away!
+
+On or after June 1, 2025, I plan to delete the GitHub repository for 
+SVG::Reader. I have found Johan Vroman's _SVGPDF_ package to be quite 
+sufficient for PDF::Builder's needs, and there is no need to continue with a 
+separate duplicate package (especially as it is incomplete and unmaintained).
+
+If you are actually _using_ SVG::Reader, please plan accordingly to grab a copy 
+of it (or fork it) for your own use. I do not plan to keep it available on 
+GitHub, nor to place it on CPAN.
+
 ## Help Needed!
 
 As you may have noticed, I haven't had time to work on this package. I _will_ be
