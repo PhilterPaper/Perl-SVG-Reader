@@ -2,7 +2,7 @@
 
 A Perl library to facilitate the reading of SVG files for the purpose of using their data in other programs
 
-## Going Away!
+# Going Away!
 
 On or after June 1, 2025, I plan to delete the GitHub repository for 
 SVG::Reader. I have found Johan Vroman's _SVGPDF_ package to be quite 
@@ -13,18 +13,26 @@ If you are actually _using_ SVG::Reader, please plan accordingly to grab a copy
 of it (or fork it) for your own use. I do not plan to keep it available on 
 GitHub, nor to place it on CPAN.
 
-## Help Needed!
+I will be using _SVGPPDF_ to support PDF::Builder use of general SVG 
+graphics, MathJax equation support, GnuPlot SVG graph output, and possibly 
+other uses.
 
-As you may have noticed, I haven't had time to work on this package. I _will_ be
-needing it to support PDF::Builder use of general SVG graphics, MathJax equation
-support, GnuPlot SVG graph output, and possibly other uses. I welcome anyone who
-wants to chip in and and help develop this package. If you contribute a great deal
-to it, I would be happy to transfer ownership of it to you, if you'd like to own
-it!
+### Using it?
+
+If you are actually _using_ SVG::Reader, please plan accordingly to grab a copy 
+of it (or fork it) for your own use. I do not plan to keep it available on 
+GitHub, nor to place it on CPAN. If someone wants to carry it forward, I
+welcome their efforts and will be happy to turn it over to you. I just want it
+out of my hair.
+
+If you have need for something to parse SVG so you can interpret it for other
+(than PDF) purposes, or translate it into something else, you should consider
+adapting _SVGPDF_ for this purpose, unless you're already deeply committed to
+_SVG::Reader_. My intent was to parse SVG, and then (in _PDF::Builder_)
+interpret the resulting data structure to put PDF primitives into the PDF
+output, which is what _SVGPDF_ does all in one call.
 
 [![Open Issues](https://img.shields.io/github/issues/PhilterPaper/Perl-SVG-Reader)](https://github.com/PhilterPaper/Perl-SVG-Reader/issues)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/PhilterPaper/Perl-SVG-Reader/graphs/commit-activity)
 
 This archive contains the distribution SVG::Reader.
 See **Changes** file for the version.
@@ -59,15 +67,6 @@ are making SVG::Reader unusable for other, more general-purpose usage, please
 speak up in the issues with your thoughts. We won't guarantee that the end
 result will be something useful for everyone, but with constructive feedback
 from _you_, the chances are increased that it's useful for everyone!
-
-**Finally, we reserve the right to incorporate this code into PDF::Builder,
-and remove this package from GitHub. Our current plan _is_ to keep it on
-GitHub _and_ to release it on CPAN as its own package, but if it turns out to
-be relatively trivial code, we may find it better to fold it into PDF::Builder
-and not support it as an independent package. If we become aware that people
-_are_ using it on its own, and would like to continue doing so, we will be
-happy to leave it as an independent package. For this to happen, we need to
-hear from you!**
 
 ## Obtaining the Package
 
